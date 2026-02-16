@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="mobile-web-app-capable" content="yes">
+    <title>Musipos Stocktake</title>
+    <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+    <div id="app">
+        <!-- Welcome / Name Entry Screen -->
+        <div id="screen-welcome" class="screen active">
+            <div class="screen-content">
+                <h1>Musipos Stocktake</h1>
+                <p>Enter your name to begin</p>
+                <input type="text" id="user-name" placeholder="Your name" autocomplete="off">
+                <button id="btn-start" class="btn btn-primary">Start</button>
+            </div>
+        </div>
+
+        <!-- Upload / Session Select Screen -->
+        <div id="screen-upload" class="screen">
+            <div class="screen-content">
+                <h2>Stocktake Session</h2>
+
+                <div id="existing-sessions" class="session-list hidden">
+                    <h3>Resume Existing Session</h3>
+                    <div id="session-list-items"></div>
+                </div>
+
+                <div class="upload-section">
+                    <h3>Start New Session</h3>
+                    <p>Upload your Musipos inventory CSV</p>
+                    <label class="file-upload-label">
+                        <input type="file" id="csv-upload" accept=".csv,.txt">
+                        <span class="btn btn-secondary">Choose CSV File</span>
+                    </label>
+                    <div id="upload-status"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Main Scanning Screen -->
+        <div id="screen-scan" class="screen">
+            <header class="scan-header">
+                <div class="session-info">
+                    <span id="session-name"></span>
+                    <span id="items-count"></span>
+                </div>
+                <button id="btn-menu" class="btn-icon">&#9776;</button>
+            </header>
+
+            <!-- Step 1: Scan Musipos Barcode -->
+            <div id="step-musipos" class="scan-step active">
+                <div class="step-content">
+                    <h2>Scan Musipos Barcode</h2>
+                    <p>Scan the custom Musipos barcode sticker</p>
+                    <input type="text" id="input-musipos-barcode" class="barcode-input"
+                           placeholder="Scan or type barcode..." autocomplete="off" inputmode="none">
+                    <div id="musipos-error" class="error-message hidden"></div>
+                </div>
+            </div>
+
+            <!-- Step 2: Item Found - Display Info -->
+            <div id="step-item-info" class="scan-step">
+                <div class="step-content">
+                    <h2>Item Found</h2>
+                    <div class="item-details">
+                        <div class="detail-row">
+                            <span class="label">SKU:</span>
+                            <span id="item-sku" class="value"></span>
+                        </div>
+                        <div class="detail-row">
+                            <span class="label">Title:</span>
+                            <span id="item-title" class="value"></span>
+                        </div>
+                        <div class="detail-row">
+                            <span class="label">Musipos Barcode:</span>
+                            <span id="item-barcode" class="value"></span>
+                        </div>
+                        <div class="detail-row">
+                            <span class="label">Product Barcode:</span>
+                            <span id="item-product-barcode" class="value"></span>
+                        </div>
+                        <div class="detail-row">
+                            <span class="label">Current Qty:</span>
+                            <span id="item-qty" class="value"></span>
+                        </div>
+                    </div>
+                    <button id="btn-continue-to-product" class="btn btn-primary">Continue</button>
+                    <button id="btn-skip-item" class="btn btn-secondary">Skip Item</button>
+                </div>
+            </div>
+
+            <!-- Step 3: Scan/Enter Product Barcode -->
+            <div id="step-product-barcode" class="scan-step">
+                <div class="step-content">
+                    <h2>Product Barcode</h2>
+                    <p>Scan the barcode printed on the product packaging</p>
+
+                    <div id="existing-product-barcode" class="existing-value hidden">
+                        <span>Current: </span>
+                        <strong id="current-product-barcode"></strong>
+                    </div>
+
+                    <input type="text" id="input-product-barcode" class="barcode-input"
+                           placeholder="Scan or type barcode..." autocomplete="off">
+
+                    <div class="button-row">
+                        <button id="btn-confirm-product" class="btn btn-primary">Confirm</button>
+                        <button id="btn-no-barcode" class="btn btn-secondary">No Barcode</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Step 4: Quantity Entry -->
+            <div id="step-quantity" class="scan-step">
+                <div class="step-content">
+                    <h2>Quantity Count</h2>
+                    <p id="qty-item-name"></p>
+
+                    <div class="quantity-display">
+                        <span id="quantity-value">0</span>
+                    </div>
+
+                    <div class="quantity-controls">
+                        <div class="manual-entry">
+                            <button id="btn-qty-minus" class="btn btn-qty">-</button>
+                            <input type="number" id="input-quantity" value="0" min="0" inputmode="numeric">
+                            <button id="btn-qty-plus" class="btn btn-qty">+</button>
+                        </div>
+                    </div>
+
+                    <div class="scan-count-section">
+                        <p>Or scan product barcode to count:</p>
+                        <input type="text" id="input-scan-count" class="barcode-input"
+                               placeholder="Scan to count..." autocomplete="off" inputmode="none">
+                        <div id="scan-count-feedback" class="feedback hidden"></div>
+                    </div>
+
+                    <button id="btn-confirm-quantity" class="btn btn-primary btn-large">
+                        Confirm Quantity
+                    </button>
+                </div>
+            </div>
+
+            <!-- Step 5: Confirm & Save -->
+            <div id="step-confirm" class="scan-step">
+                <div class="step-content">
+                    <h2>Confirm Changes</h2>
+
+                    <div class="confirm-summary">
+                        <div class="detail-row">
+                            <span class="label">Item:</span>
+                            <span id="confirm-title" class="value"></span>
+                        </div>
+                        <div class="detail-row">
+                            <span class="label">SKU:</span>
+                            <span id="confirm-sku" class="value"></span>
+                        </div>
+                        <div class="detail-row highlight">
+                            <span class="label">Product Barcode:</span>
+                            <span id="confirm-product-barcode" class="value"></span>
+                        </div>
+                        <div class="detail-row highlight">
+                            <span class="label">New Quantity:</span>
+                            <span id="confirm-quantity" class="value"></span>
+                        </div>
+                    </div>
+
+                    <div class="button-row">
+                        <button id="btn-save" class="btn btn-primary btn-large">Save & Next</button>
+                        <button id="btn-back-to-qty" class="btn btn-secondary">Go Back</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Menu Overlay -->
+        <div id="menu-overlay" class="overlay hidden">
+            <div class="overlay-content">
+                <button id="btn-close-menu" class="btn-close">&times;</button>
+                <h2>Menu</h2>
+                <nav class="menu-nav">
+                    <button id="btn-view-unknown" class="menu-item">
+                        Unknown Barcodes
+                        <span id="unknown-count" class="badge">0</span>
+                    </button>
+                    <button id="btn-export" class="menu-item">Export CSV</button>
+                    <button id="btn-change-session" class="menu-item">Change Session</button>
+                </nav>
+                <div class="menu-footer">
+                    <p>Logged in as: <strong id="menu-user-name"></strong></p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Unknown Barcodes Overlay -->
+        <div id="unknown-overlay" class="overlay hidden">
+            <div class="overlay-content">
+                <button id="btn-close-unknown" class="btn-close">&times;</button>
+                <h2>Unknown Barcodes</h2>
+                <div id="unknown-list"></div>
+                <button id="btn-export-unknown" class="btn btn-secondary">Export List</button>
+            </div>
+        </div>
+
+        <!-- Loading Overlay -->
+        <div id="loading-overlay" class="overlay hidden">
+            <div class="loading-spinner"></div>
+            <p id="loading-message">Loading...</p>
+        </div>
+
+        <!-- Toast Notifications -->
+        <div id="toast-container"></div>
+    </div>
+
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
+
+    <!-- Papa Parse for CSV -->
+    <script src="https://unpkg.com/papaparse@5.4.1/papaparse.min.js"></script>
+
+    <!-- App Scripts -->
+    <script src="js/firebase.js"></script>
+    <script src="js/csv.js"></script>
+    <script src="js/scanner.js"></script>
+    <script src="js/ui.js"></script>
+    <script src="js/app.js"></script>
+</body>
+</html>

@@ -1,0 +1,16 @@
+# OS files
+.DS_Store
+Thumbs.db
+
+# Editor files
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Firebase
+.firebase/
+firebase-debug.log
+
+# Node (if you add any tools later)
+node_modules/
