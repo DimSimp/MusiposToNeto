@@ -12,12 +12,12 @@
 
 // TODO: Replace with your Firebase config
 const firebaseConfig = {
-    apiKey: "YOUR_API_KEY",
-    authDomain: "YOUR_PROJECT.firebaseapp.com",
-    projectId: "YOUR_PROJECT_ID",
-    storageBucket: "YOUR_PROJECT.appspot.com",
-    messagingSenderId: "YOUR_SENDER_ID",
-    appId: "YOUR_APP_ID"
+  apiKey: "AIzaSyCrYRFLRRYu9k5-e5qRbFVlpdf7YU5O0oI",
+  authDomain: "musipos-stocktake.firebaseapp.com",
+  projectId: "musipos-stocktake",
+  storageBucket: "musipos-stocktake.firebasestorage.app",
+  messagingSenderId: "432066232833",
+  appId: "1:432066232833:web:958631a576002600f8b600"
 };
 
 // Initialize Firebase
