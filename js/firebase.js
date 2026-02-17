@@ -136,14 +136,29 @@ const FirebaseService = {
     },
 
     async getItemByBarcode(sessionId, barcode) {
+        // First try direct lookup by Barcode (document ID)
         const doc = await db.collection('stocktakes')
             .doc(sessionId)
             .collection('items')
             .doc(barcode)
             .get();
 
-        if (!doc.exists) return null;
-        return { id: doc.id, ...doc.data() };
+        if (doc.exists) return { id: doc.id, ...doc.data() };
+
+        // If not found, try searching by Supplier_Item_ID (SKU)
+        const skuSnapshot = await db.collection('stocktakes')
+            .doc(sessionId)
+            .collection('items')
+            .where('Supplier_Item_ID', '==', barcode)
+            .limit(1)
+            .get();
+
+        if (!skuSnapshot.empty) {
+            const skuDoc = skuSnapshot.docs[0];
+            return { id: skuDoc.id, ...skuDoc.data() };
+        }
+
+        return null;
     },
 
     async updateItem(sessionId, barcode, updates, userName) {
