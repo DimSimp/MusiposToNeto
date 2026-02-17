@@ -78,6 +78,9 @@ const ScannerService = {
             return;
         }
 
+        // Force uppercase for case-insensitive matching
+        barcode = barcode.toUpperCase();
+
         if (barcode.length > this.config.maxBarcodeLength) {
             console.warn('Barcode too long, truncating');
             barcode = barcode.substring(0, this.config.maxBarcodeLength);
