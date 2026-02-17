@@ -15,6 +15,10 @@ const App = {
         unknownBarcodes: []
     },
 
+    // Camera scanner
+    cameraScanner: null,
+    cameraScanCallback: null,
+
     // Firebase listeners (for cleanup)
     listeners: {
         session: null,
@@ -88,6 +92,16 @@ const App = {
             this.state.quantity = Math.max(0, val);
             UI.updateQuantityDisplay(this.state.quantity);
         });
+
+        // Camera scan buttons
+        document.querySelectorAll('.btn-camera').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                const targetId = e.currentTarget.dataset.target;
+                this.openCameraScanner(targetId);
+            });
+        });
+        UI.$('btn-close-camera').addEventListener('click', () => this.closeCameraScanner());
+        UI.$('btn-cancel-camera').addEventListener('click', () => this.closeCameraScanner());
 
         // Menu
         UI.$('btn-menu').addEventListener('click', () => UI.show('menu-overlay'));
@@ -504,6 +518,75 @@ const App = {
     },
 
     // Change session
+    // Camera scanner
+    openCameraScanner(targetInputId) {
+        const targetInput = UI.$(targetInputId);
+        if (!targetInput) return;
+
+        UI.show('camera-overlay');
+
+        // Determine what to do with the scanned result based on which input triggered it
+        this.cameraScanCallback = (barcode) => {
+            // Put the barcode value into the target input and trigger the scanner handler
+            targetInput.value = barcode;
+            ScannerService.activeInput = targetInput;
+            ScannerService.processScan(barcode);
+        };
+
+        const config = {
+            fps: 10,
+            qrbox: { width: 250, height: 100 },
+            aspectRatio: 1.0,
+            formatsToSupport: [
+                Html5QrcodeSupportedFormats.EAN_13,
+                Html5QrcodeSupportedFormats.EAN_8,
+                Html5QrcodeSupportedFormats.UPC_A,
+                Html5QrcodeSupportedFormats.UPC_E,
+                Html5QrcodeSupportedFormats.CODE_128,
+                Html5QrcodeSupportedFormats.CODE_39,
+                Html5QrcodeSupportedFormats.CODE_93,
+                Html5QrcodeSupportedFormats.ITF
+            ]
+        };
+
+        this.cameraScanner = new Html5Qrcode("camera-reader");
+        this.cameraScanner.start(
+            { facingMode: "environment" },
+            config,
+            (decodedText) => {
+                // Barcode detected
+                if (this.cameraScanCallback) {
+                    this.cameraScanCallback(decodedText);
+                }
+                this.closeCameraScanner();
+                ScannerService.triggerHaptic();
+            },
+            (errorMessage) => {
+                // Scan error (expected while searching) - ignore
+            }
+        ).catch(err => {
+            console.error('Camera error:', err);
+            UI.error('Could not access camera. Check permissions.');
+            this.closeCameraScanner();
+        });
+    },
+
+    closeCameraScanner() {
+        if (this.cameraScanner) {
+            this.cameraScanner.stop()
+                .then(() => {
+                    this.cameraScanner.clear();
+                    this.cameraScanner = null;
+                })
+                .catch(err => {
+                    console.warn('Camera stop error:', err);
+                    this.cameraScanner = null;
+                });
+        }
+        this.cameraScanCallback = null;
+        UI.hide('camera-overlay');
+    },
+
     async changeSession() {
         UI.hide('menu-overlay');
 

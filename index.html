@@ -57,8 +57,11 @@
                 <div class="step-content">
                     <h2>Scan Barcode or Enter SKU</h2>
                     <p>Scan the Musipos barcode sticker, or type the item SKU</p>
-                    <input type="text" id="input-musipos-barcode" class="barcode-input"
-                           placeholder="Scan barcode or type SKU..." autocomplete="off">
+                    <div class="input-with-camera">
+                        <input type="text" id="input-musipos-barcode" class="barcode-input"
+                               placeholder="Scan barcode or type SKU..." autocomplete="off">
+                        <button class="btn-camera" data-target="input-musipos-barcode" title="Scan with camera">&#128247;</button>
+                    </div>
                     <div id="musipos-error" class="error-message hidden"></div>
                 </div>
             </div>
@@ -105,8 +108,11 @@
                         <strong id="current-product-barcode"></strong>
                     </div>
 
-                    <input type="text" id="input-product-barcode" class="barcode-input"
-                           placeholder="Scan or type barcode..." autocomplete="off">
+                    <div class="input-with-camera">
+                        <input type="text" id="input-product-barcode" class="barcode-input"
+                               placeholder="Scan or type barcode..." autocomplete="off">
+                        <button class="btn-camera" data-target="input-product-barcode" title="Scan with camera">&#128247;</button>
+                    </div>
 
                     <div class="button-row">
                         <button id="btn-confirm-product" class="btn btn-primary">Confirm</button>
@@ -135,8 +141,11 @@
 
                     <div class="scan-count-section">
                         <p>Or scan product barcode to count:</p>
-                        <input type="text" id="input-scan-count" class="barcode-input"
-                               placeholder="Scan to count..." autocomplete="off">
+                        <div class="input-with-camera">
+                            <input type="text" id="input-scan-count" class="barcode-input"
+                                   placeholder="Scan to count..." autocomplete="off">
+                            <button class="btn-camera" data-target="input-scan-count" title="Scan with camera">&#128247;</button>
+                        </div>
                         <div id="scan-count-feedback" class="feedback hidden"></div>
                     </div>
 
@@ -207,6 +216,17 @@
             </div>
         </div>
 
+        <!-- Camera Scanner Overlay -->
+        <div id="camera-overlay" class="overlay hidden">
+            <div class="overlay-content camera-overlay-content">
+                <button id="btn-close-camera" class="btn-close">&times;</button>
+                <h2>Camera Scanner</h2>
+                <p>Point at a barcode</p>
+                <div id="camera-reader"></div>
+                <button id="btn-cancel-camera" class="btn btn-secondary" style="margin-top: 16px; width: 100%;">Cancel</button>
+            </div>
+        </div>
+
         <!-- Loading Overlay -->
         <div id="loading-overlay" class="overlay hidden">
             <div class="loading-spinner"></div>
@@ -224,6 +244,9 @@
 
     <!-- Papa Parse for CSV -->
     <script src="https://unpkg.com/papaparse@5.4.1/papaparse.min.js"></script>
+
+    <!-- html5-qrcode for camera barcode scanning -->
+    <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
 
     <!-- App Scripts -->
     <script src="js/firebase.js"></script>

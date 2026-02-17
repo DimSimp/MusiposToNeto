@@ -205,6 +205,57 @@ input[type="number"]:focus {
     text-transform: uppercase;
 }
 
+/* Input with camera button */
+.input-with-camera {
+    display: flex;
+    gap: 8px;
+    width: 100%;
+    align-items: flex-start;
+    margin-bottom: 16px;
+}
+
+.input-with-camera .barcode-input {
+    flex: 1;
+    margin-bottom: 0;
+}
+
+.btn-camera {
+    flex-shrink: 0;
+    width: 52px;
+    height: 52px;
+    border: 2px solid var(--border);
+    border-radius: var(--radius);
+    background: var(--bg-card);
+    font-size: 1.25rem;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.15s ease;
+    touch-action: manipulation;
+}
+
+.btn-camera:hover, .btn-camera:active {
+    border-color: var(--primary);
+    background: #f0f9ff;
+}
+
+/* Camera overlay */
+.camera-overlay-content {
+    max-width: 500px;
+}
+
+#camera-reader {
+    width: 100%;
+    border-radius: var(--radius);
+    overflow: hidden;
+}
+
+#camera-reader video {
+    width: 100% !important;
+    border-radius: var(--radius);
+}
+
 /* File Upload */
 .file-upload-label {
     cursor: pointer;
