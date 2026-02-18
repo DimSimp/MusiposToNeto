@@ -265,7 +265,10 @@ const FirebaseService = {
         let totalDeleted = 0;
         let batchNumber = 0;
 
-        let snapshot = await collectionRef.limit(batchSize).get();
+        // Force server read to bypass offline cache
+        console.log(`Starting delete of ${label}...`);
+        let snapshot = await collectionRef.limit(batchSize).get({ source: 'server' });
+        console.log(`Initial query returned ${snapshot.size} docs`);
 
         while (!snapshot.empty) {
             batchNumber++;
@@ -278,6 +281,7 @@ const FirebaseService = {
                     snapshot.docs.forEach(doc => batch.delete(doc.ref));
                     await batch.commit();
                     success = true;
+                    console.log(`Batch ${batchNumber}: deleted ${snapshot.size} docs`);
                 } catch (error) {
                     retries++;
                     console.warn(`Delete batch ${batchNumber} failed (attempt ${retries}):`, error.message);
@@ -297,8 +301,10 @@ const FirebaseService = {
 
             // Throttle to avoid rate limits
             await new Promise(r => setTimeout(r, 300));
-            snapshot = await collectionRef.limit(batchSize).get();
+            snapshot = await collectionRef.limit(batchSize).get({ source: 'server' });
         }
+
+        console.log(`Finished deleting ${label}: ${totalDeleted} total`);
     },
 
     onUnknownBarcodesUpdate(sessionId, callback) {
