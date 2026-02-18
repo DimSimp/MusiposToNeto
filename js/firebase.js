@@ -243,6 +243,36 @@ const FirebaseService = {
             });
     },
 
+    // Delete a session and all its subcollections
+    async deleteSession(sessionId) {
+        // Delete items subcollection in batches
+        const itemsRef = db.collection('stocktakes').doc(sessionId).collection('items');
+        await this._deleteCollection(itemsRef);
+
+        // Delete unknownBarcodes subcollection
+        const unknownRef = db.collection('stocktakes').doc(sessionId).collection('unknownBarcodes');
+        await this._deleteCollection(unknownRef);
+
+        // Delete the session document itself
+        await db.collection('stocktakes').doc(sessionId).delete();
+    },
+
+    // Helper to delete all docs in a collection
+    async _deleteCollection(collectionRef) {
+        const batchSize = 200;
+        let snapshot = await collectionRef.limit(batchSize).get();
+
+        while (!snapshot.empty) {
+            const batch = db.batch();
+            snapshot.docs.forEach(doc => batch.delete(doc.ref));
+            await batch.commit();
+
+            // Small delay to avoid rate limits
+            await new Promise(r => setTimeout(r, 200));
+            snapshot = await collectionRef.limit(batchSize).get();
+        }
+    },
+
     onUnknownBarcodesUpdate(sessionId, callback) {
         return db.collection('stocktakes')
             .doc(sessionId)

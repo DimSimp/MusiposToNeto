@@ -180,7 +180,10 @@ const UI = {
                     <div class="session-name">${session.csvFileName || 'Unknown'}</div>
                     <div class="session-date">${this.formatDate(session.createdAt)}</div>
                 </div>
-                <div>${session.updatedCount || 0}/${session.itemCount || 0}</div>
+                <div style="display: flex; align-items: center; gap: 12px;">
+                    <span>${session.updatedCount || 0}/${session.itemCount || 0}</span>
+                    <button class="btn-delete-session" data-session-id="${session.id}" title="Delete session" style="background:none;border:none;color:var(--error);font-size:1.25rem;cursor:pointer;padding:4px;">&times;</button>
+                </div>
             </div>
         `).join('');
     },

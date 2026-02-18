@@ -117,6 +117,16 @@ const App = {
         UI.$('btn-export').addEventListener('click', () => this.exportCSV());
         UI.$('btn-export-unknown').addEventListener('click', () => this.exportUnknownBarcodes());
         UI.$('btn-change-session').addEventListener('click', () => this.changeSession());
+        UI.$('btn-delete-session').addEventListener('click', () => this.deleteCurrentSession());
+
+        // Delete session from session list
+        UI.$('session-list-items').addEventListener('click', (e) => {
+            const deleteBtn = e.target.closest('.btn-delete-session');
+            if (deleteBtn) {
+                e.stopPropagation();
+                this.deleteSession(deleteBtn.dataset.sessionId);
+            }
+        });
 
         // Close overlays on backdrop click
         UI.$('menu-overlay').addEventListener('click', (e) => {
@@ -198,35 +208,59 @@ const App = {
 
     // Upload items in batches with progress
     async uploadItemsInBatches(sessionId, items) {
-        const batchSize = 400; // Slightly under Firestore limit
+        const batchSize = 200; // Smaller batches for reliability
         const totalBatches = Math.ceil(items.length / batchSize);
+        const delayBetweenBatches = 300; // ms pause between batches
+        const maxRetries = 3;
+
+        const itemsRef = firebase.firestore()
+            .collection('stocktakes')
+            .doc(sessionId)
+            .collection('items');
 
         for (let i = 0; i < totalBatches; i++) {
             const start = i * batchSize;
             const end = Math.min(start + batchSize, items.length);
-            const batch = items.slice(start, end);
+            const batchItems = items.slice(start, end);
+            const progress = Math.round(((i + 1) / totalBatches) * 100);
 
-            UI.showLoading(`Uploading batch ${i + 1} of ${totalBatches}...`);
+            UI.showLoading(`Uploading batch ${i + 1} of ${totalBatches} (${progress}%)...`);
 
-            const itemsRef = firebase.firestore()
-                .collection('stocktakes')
-                .doc(sessionId)
-                .collection('items');
+            let retries = 0;
+            let success = false;
 
-            const writeBatch = firebase.firestore().batch();
+            while (!success && retries < maxRetries) {
+                try {
+                    const writeBatch = firebase.firestore().batch();
 
-            batch.forEach((item, index) => {
-                const barcode = item.Barcode || `NO_BARCODE_${start + index}`;
-                const docRef = itemsRef.doc(barcode);
-                writeBatch.set(docRef, {
-                    ...item,
-                    _modified: false,
-                    _stocktake_quantity: null,
-                    _createdAt: firebase.firestore.FieldValue.serverTimestamp()
-                });
-            });
+                    batchItems.forEach((item, index) => {
+                        const barcode = item.Barcode || `NO_BARCODE_${start + index}`;
+                        const docRef = itemsRef.doc(barcode);
+                        writeBatch.set(docRef, {
+                            ...item,
+                            _modified: false,
+                            _stocktake_quantity: null
+                        });
+                    });
 
-            await writeBatch.commit();
+                    await writeBatch.commit();
+                    success = true;
+                } catch (error) {
+                    retries++;
+                    console.warn(`Batch ${i + 1} failed (attempt ${retries}):`, error.message);
+                    if (retries < maxRetries) {
+                        // Wait longer before retrying
+                        await new Promise(r => setTimeout(r, 1000 * retries));
+                    } else {
+                        throw new Error(`Upload failed at batch ${i + 1} after ${maxRetries} retries: ${error.message}`);
+                    }
+                }
+            }
+
+            // Throttle to avoid hitting Firestore rate limits
+            if (i < totalBatches - 1) {
+                await new Promise(r => setTimeout(r, delayBetweenBatches));
+            }
         }
     },
 
@@ -615,6 +649,67 @@ const App = {
             UI.showScreen('screen-upload');
         } catch (error) {
             UI.error('Failed to load sessions');
+        } finally {
+            UI.hideLoading();
+        }
+    },
+
+    // Delete the current active session
+    async deleteCurrentSession() {
+        if (!confirm('Are you sure you want to delete this session? All data will be permanently lost.')) {
+            return;
+        }
+
+        UI.hide('menu-overlay');
+        UI.showLoading('Deleting session...');
+
+        try {
+            // Clean up listeners
+            if (this.listeners.session) this.listeners.session();
+            if (this.listeners.unknownBarcodes) this.listeners.unknownBarcodes();
+
+            await FirebaseService.deleteSession(this.state.sessionId);
+            localStorage.removeItem('stocktake_session');
+            this.state.sessionId = null;
+
+            UI.success('Session deleted');
+
+            // Reload session list
+            const sessions = await FirebaseService.getSessions();
+            UI.renderSessionList(sessions);
+            UI.showScreen('screen-upload');
+        } catch (error) {
+            console.error('Delete error:', error);
+            UI.error('Failed to delete session');
+        } finally {
+            UI.hideLoading();
+        }
+    },
+
+    // Delete a session from the session list
+    async deleteSession(sessionId) {
+        if (!confirm('Are you sure you want to delete this session? All data will be permanently lost.')) {
+            return;
+        }
+
+        UI.showLoading('Deleting session...');
+
+        try {
+            await FirebaseService.deleteSession(sessionId);
+
+            if (this.state.sessionId === sessionId) {
+                localStorage.removeItem('stocktake_session');
+                this.state.sessionId = null;
+            }
+
+            UI.success('Session deleted');
+
+            // Reload session list
+            const sessions = await FirebaseService.getSessions();
+            UI.renderSessionList(sessions);
+        } catch (error) {
+            console.error('Delete error:', error);
+            UI.error('Failed to delete session');
         } finally {
             UI.hideLoading();
         }
