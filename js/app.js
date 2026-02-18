@@ -663,15 +663,15 @@ const App = {
         }
 
         UI.hide('menu-overlay');
-        UI.showLoadingWithProgress('Deleting session...', 0);
+        UI.showLoading('Deleting session...');
 
         try {
             // Clean up listeners
             if (this.listeners.session) this.listeners.session();
             if (this.listeners.unknownBarcodes) this.listeners.unknownBarcodes();
 
-            await FirebaseService.deleteSession(this.state.sessionId, (msg, percent) => {
-                UI.showLoadingWithProgress(msg, percent || 0);
+            await FirebaseService.deleteSession(this.state.sessionId, (msg) => {
+                UI.showLoading(msg);
             });
             localStorage.removeItem('stocktake_session');
             this.state.sessionId = null;
@@ -696,11 +696,11 @@ const App = {
             return;
         }
 
-        UI.showLoadingWithProgress('Deleting session...', 0);
+        UI.showLoading('Deleting session...');
 
         try {
-            await FirebaseService.deleteSession(sessionId, (msg, percent) => {
-                UI.showLoadingWithProgress(msg, percent || 0);
+            await FirebaseService.deleteSession(sessionId, (msg) => {
+                UI.showLoading(msg);
             });
 
             if (this.state.sessionId === sessionId) {

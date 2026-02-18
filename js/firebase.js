@@ -260,31 +260,43 @@ const FirebaseService = {
 
     // Helper to delete all docs in a collection
     async _deleteCollection(collectionRef, label, onProgress) {
-        const batchSize = 200;
+        const batchSize = 100;
+        const maxRetries = 3;
         let totalDeleted = 0;
-
-        // Get total count first
-        const countSnapshot = await collectionRef.get();
-        const totalDocs = countSnapshot.size;
-
-        if (totalDocs === 0) return;
+        let batchNumber = 0;
 
         let snapshot = await collectionRef.limit(batchSize).get();
 
         while (!snapshot.empty) {
-            const batch = db.batch();
-            snapshot.docs.forEach(doc => batch.delete(doc.ref));
-            await batch.commit();
+            batchNumber++;
+            let retries = 0;
+            let success = false;
 
-            totalDeleted += snapshot.docs.length;
-            const percent = Math.round((totalDeleted / totalDocs) * 100);
-
-            if (onProgress) {
-                onProgress(`Deleting ${label}: ${totalDeleted}/${totalDocs}`, percent);
+            while (!success && retries < maxRetries) {
+                try {
+                    const batch = db.batch();
+                    snapshot.docs.forEach(doc => batch.delete(doc.ref));
+                    await batch.commit();
+                    success = true;
+                } catch (error) {
+                    retries++;
+                    console.warn(`Delete batch ${batchNumber} failed (attempt ${retries}):`, error.message);
+                    if (retries < maxRetries) {
+                        await new Promise(r => setTimeout(r, 1000 * retries));
+                    } else {
+                        throw new Error(`Delete failed at batch ${batchNumber}: ${error.message}`);
+                    }
+                }
             }
 
-            // Small delay to avoid rate limits
-            await new Promise(r => setTimeout(r, 200));
+            totalDeleted += snapshot.docs.length;
+
+            if (onProgress) {
+                onProgress(`Deleting ${label}: ${totalDeleted} removed...`);
+            }
+
+            // Throttle to avoid rate limits
+            await new Promise(r => setTimeout(r, 300));
             snapshot = await collectionRef.limit(batchSize).get();
         }
     },
