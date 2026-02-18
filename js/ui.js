@@ -268,6 +268,34 @@ const UI = {
 
     hideError(elementId) {
         this.hide(elementId);
+    },
+
+    // Active users
+    renderActiveUsers(users) {
+        const container = this.$('active-users-list');
+        const countBadge = this.$('active-users-count');
+
+        // Update badge
+        if (users.length > 0) {
+            countBadge.textContent = users.length;
+            countBadge.style.display = '';
+        } else {
+            countBadge.style.display = 'none';
+        }
+
+        if (!container) return;
+
+        if (users.length === 0) {
+            container.innerHTML = '<p style="text-align: center; color: var(--text-light);">No active users</p>';
+            return;
+        }
+
+        container.innerHTML = users.map(user => `
+            <div class="active-user-item">
+                <span class="active-user-dot"></span>
+                <span class="active-user-name">${user.name || 'Anonymous'}</span>
+            </div>
+        `).join('');
     }
 };
 

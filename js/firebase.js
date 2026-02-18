@@ -307,6 +307,57 @@ const FirebaseService = {
         console.log(`Finished deleting ${label}: ${totalDeleted} total`);
     },
 
+    // Presence tracking
+    async updatePresence(sessionId, userName) {
+        const uid = this.getCurrentUserId();
+        if (!uid) return;
+
+        await db.collection('stocktakes')
+            .doc(sessionId)
+            .collection('presence')
+            .doc(uid)
+            .set({
+                name: userName,
+                uid: uid,
+                lastSeen: firebase.firestore.FieldValue.serverTimestamp()
+            }, { merge: true });
+    },
+
+    async removePresence(sessionId) {
+        const uid = this.getCurrentUserId();
+        if (!uid || !sessionId) return;
+
+        try {
+            await db.collection('stocktakes')
+                .doc(sessionId)
+                .collection('presence')
+                .doc(uid)
+                .delete();
+        } catch (e) {
+            console.warn('Failed to remove presence:', e.message);
+        }
+    },
+
+    onPresenceUpdate(sessionId, callback) {
+        return db.collection('stocktakes')
+            .doc(sessionId)
+            .collection('presence')
+            .onSnapshot(snapshot => {
+                const now = Date.now();
+                const twoMinutesAgo = now - 2 * 60 * 1000;
+
+                const activeUsers = snapshot.docs
+                    .map(doc => ({ id: doc.id, ...doc.data() }))
+                    .filter(user => {
+                        if (!user.lastSeen) return false;
+                        const lastSeen = user.lastSeen.toDate ? user.lastSeen.toDate().getTime() : 0;
+                        return lastSeen > twoMinutesAgo;
+                    });
+
+                callback(activeUsers);
+            });
+    },
+
     onUnknownBarcodesUpdate(sessionId, callback) {
         return db.collection('stocktakes')
             .doc(sessionId)

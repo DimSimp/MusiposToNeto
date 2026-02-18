@@ -19,10 +19,14 @@ const App = {
     cameraScanner: null,
     cameraScanCallback: null,
 
+    // Presence heartbeat
+    presenceInterval: null,
+
     // Firebase listeners (for cleanup)
     listeners: {
         session: null,
-        unknownBarcodes: null
+        unknownBarcodes: null,
+        presence: null
     },
 
     // Initialize the application
@@ -130,12 +134,26 @@ const App = {
             }
         });
 
+        // Active users
+        UI.$('btn-active-users').addEventListener('click', () => UI.show('active-users-overlay'));
+        UI.$('btn-close-active-users').addEventListener('click', () => UI.hide('active-users-overlay'));
+
+        // Clean up presence on page close
+        window.addEventListener('beforeunload', () => {
+            if (this.state.sessionId) {
+                FirebaseService.removePresence(this.state.sessionId);
+            }
+        });
+
         // Close overlays on backdrop click
         UI.$('menu-overlay').addEventListener('click', (e) => {
             if (e.target.id === 'menu-overlay') UI.hide('menu-overlay');
         });
         UI.$('unknown-overlay').addEventListener('click', (e) => {
             if (e.target.id === 'unknown-overlay') UI.hide('unknown-overlay');
+        });
+        UI.$('active-users-overlay').addEventListener('click', (e) => {
+            if (e.target.id === 'active-users-overlay') UI.hide('active-users-overlay');
         });
     },
 
@@ -305,9 +323,35 @@ const App = {
         // Set up real-time listeners
         this.setupRealtimeListeners();
 
+        // Start presence heartbeat
+        this.startPresenceHeartbeat();
+
         // Show scan screen
         UI.showScreen('screen-scan');
         this.goToMusiposScan();
+    },
+
+    // Presence heartbeat
+    startPresenceHeartbeat() {
+        // Clear any existing interval
+        if (this.presenceInterval) clearInterval(this.presenceInterval);
+
+        // Update presence immediately
+        FirebaseService.updatePresence(this.state.sessionId, this.state.userName);
+
+        // Then every 30 seconds
+        this.presenceInterval = setInterval(() => {
+            if (this.state.sessionId) {
+                FirebaseService.updatePresence(this.state.sessionId, this.state.userName);
+            }
+        }, 30000);
+    },
+
+    stopPresenceHeartbeat() {
+        if (this.presenceInterval) {
+            clearInterval(this.presenceInterval);
+            this.presenceInterval = null;
+        }
     },
 
     // Set up Firebase real-time listeners
@@ -315,6 +359,7 @@ const App = {
         // Clean up existing listeners
         if (this.listeners.session) this.listeners.session();
         if (this.listeners.unknownBarcodes) this.listeners.unknownBarcodes();
+        if (this.listeners.presence) this.listeners.presence();
 
         // Session updates
         this.listeners.session = FirebaseService.onSessionUpdate(
@@ -329,6 +374,12 @@ const App = {
                 this.state.unknownBarcodes = barcodes;
                 UI.renderUnknownBarcodes(barcodes);
             }
+        );
+
+        // Active users presence
+        this.listeners.presence = FirebaseService.onPresenceUpdate(
+            this.state.sessionId,
+            (users) => UI.renderActiveUsers(users)
         );
     },
 
@@ -638,9 +689,14 @@ const App = {
     async changeSession() {
         UI.hide('menu-overlay');
 
-        // Clean up listeners
+        // Clean up presence and listeners
+        this.stopPresenceHeartbeat();
+        if (this.state.sessionId) {
+            FirebaseService.removePresence(this.state.sessionId);
+        }
         if (this.listeners.session) this.listeners.session();
         if (this.listeners.unknownBarcodes) this.listeners.unknownBarcodes();
+        if (this.listeners.presence) this.listeners.presence();
 
         // Load sessions and show upload screen
         UI.showLoading('Loading sessions...');
@@ -666,9 +722,11 @@ const App = {
         UI.showLoading('Deleting session...');
 
         try {
-            // Clean up listeners
+            // Clean up presence and listeners
+            this.stopPresenceHeartbeat();
             if (this.listeners.session) this.listeners.session();
             if (this.listeners.unknownBarcodes) this.listeners.unknownBarcodes();
+            if (this.listeners.presence) this.listeners.presence();
 
             await FirebaseService.deleteSession(this.state.sessionId, (msg) => {
                 UI.showLoading(msg);

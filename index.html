@@ -49,7 +49,10 @@
                     <span id="session-name"></span>
                     <span id="items-count"></span>
                 </div>
-                <button id="btn-menu" class="btn-icon">&#9776;</button>
+                <div style="display: flex; align-items: center; gap: 4px;">
+                    <button id="btn-active-users" class="btn-icon" title="Active Users">&#128101;<span id="active-users-count" class="badge" style="display:none;">0</span></button>
+                    <button id="btn-menu" class="btn-icon">&#9776;</button>
+                </div>
             </header>
 
             <!-- Step 1: Scan Musipos Barcode -->
@@ -228,6 +231,15 @@
                 <p>Point at a barcode</p>
                 <div id="camera-reader"></div>
                 <button id="btn-cancel-camera" class="btn btn-secondary" style="margin-top: 16px; width: 100%;">Cancel</button>
+            </div>
+        </div>
+
+        <!-- Active Users Overlay -->
+        <div id="active-users-overlay" class="overlay hidden">
+            <div class="overlay-content">
+                <button id="btn-close-active-users" class="btn-close">&times;</button>
+                <h2>Active Users</h2>
+                <div id="active-users-list"></div>
             </div>
         </div>
 
