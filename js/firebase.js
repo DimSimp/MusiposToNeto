@@ -244,28 +244,44 @@ const FirebaseService = {
     },
 
     // Delete a session and all its subcollections
-    async deleteSession(sessionId) {
+    async deleteSession(sessionId, onProgress) {
         // Delete items subcollection in batches
         const itemsRef = db.collection('stocktakes').doc(sessionId).collection('items');
-        await this._deleteCollection(itemsRef);
+        await this._deleteCollection(itemsRef, 'items', onProgress);
 
         // Delete unknownBarcodes subcollection
         const unknownRef = db.collection('stocktakes').doc(sessionId).collection('unknownBarcodes');
-        await this._deleteCollection(unknownRef);
+        await this._deleteCollection(unknownRef, 'unknown barcodes', onProgress);
 
         // Delete the session document itself
+        if (onProgress) onProgress('Removing session...');
         await db.collection('stocktakes').doc(sessionId).delete();
     },
 
     // Helper to delete all docs in a collection
-    async _deleteCollection(collectionRef) {
+    async _deleteCollection(collectionRef, label, onProgress) {
         const batchSize = 200;
+        let totalDeleted = 0;
+
+        // Get total count first
+        const countSnapshot = await collectionRef.get();
+        const totalDocs = countSnapshot.size;
+
+        if (totalDocs === 0) return;
+
         let snapshot = await collectionRef.limit(batchSize).get();
 
         while (!snapshot.empty) {
             const batch = db.batch();
             snapshot.docs.forEach(doc => batch.delete(doc.ref));
             await batch.commit();
+
+            totalDeleted += snapshot.docs.length;
+            const percent = Math.round((totalDeleted / totalDocs) * 100);
+
+            if (onProgress) {
+                onProgress(`Deleting ${label}: ${totalDeleted}/${totalDocs}`, percent);
+            }
 
             // Small delay to avoid rate limits
             await new Promise(r => setTimeout(r, 200));

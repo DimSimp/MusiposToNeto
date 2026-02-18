@@ -233,8 +233,16 @@
 
         <!-- Loading Overlay -->
         <div id="loading-overlay" class="overlay hidden">
-            <div class="loading-spinner"></div>
-            <p id="loading-message">Loading...</p>
+            <div class="loading-content">
+                <div class="loading-spinner"></div>
+                <p id="loading-message">Loading...</p>
+                <div id="loading-progress-container" class="hidden">
+                    <div class="progress-bar">
+                        <div id="loading-progress-bar" class="progress-bar-fill"></div>
+                    </div>
+                    <p id="loading-progress-text" class="progress-text">0%</p>
+                </div>
+            </div>
         </div>
 
         <!-- Toast Notifications -->

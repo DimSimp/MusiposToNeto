@@ -65,11 +65,22 @@ const UI = {
     // Loading overlay
     showLoading(message = 'Loading...') {
         this.$('loading-message').textContent = message;
+        this.hide('loading-progress-container');
+        this.show('loading-overlay');
+    },
+
+    showLoadingWithProgress(message, percent) {
+        this.$('loading-message').textContent = message;
+        this.$('loading-progress-bar').style.width = percent + '%';
+        this.$('loading-progress-text').textContent = percent + '%';
+        this.show('loading-progress-container');
         this.show('loading-overlay');
     },
 
     hideLoading() {
         this.hide('loading-overlay');
+        this.hide('loading-progress-container');
+        this.$('loading-progress-bar').style.width = '0%';
     },
 
     // Toast notifications

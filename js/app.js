@@ -226,7 +226,7 @@ const App = {
             const batchItems = items.slice(start, end);
             const progress = Math.round(((i + 1) / totalBatches) * 100);
 
-            UI.showLoading(`Uploading batch ${i + 1} of ${totalBatches} (${progress}%)...`);
+            UI.showLoadingWithProgress(`Uploading batch ${i + 1} of ${totalBatches}...`, progress);
 
             let retries = 0;
             let success = false;
@@ -663,14 +663,16 @@ const App = {
         }
 
         UI.hide('menu-overlay');
-        UI.showLoading('Deleting session...');
+        UI.showLoadingWithProgress('Deleting session...', 0);
 
         try {
             // Clean up listeners
             if (this.listeners.session) this.listeners.session();
             if (this.listeners.unknownBarcodes) this.listeners.unknownBarcodes();
 
-            await FirebaseService.deleteSession(this.state.sessionId);
+            await FirebaseService.deleteSession(this.state.sessionId, (msg, percent) => {
+                UI.showLoadingWithProgress(msg, percent || 0);
+            });
             localStorage.removeItem('stocktake_session');
             this.state.sessionId = null;
 
@@ -694,10 +696,12 @@ const App = {
             return;
         }
 
-        UI.showLoading('Deleting session...');
+        UI.showLoadingWithProgress('Deleting session...', 0);
 
         try {
-            await FirebaseService.deleteSession(sessionId);
+            await FirebaseService.deleteSession(sessionId, (msg, percent) => {
+                UI.showLoadingWithProgress(msg, percent || 0);
+            });
 
             if (this.state.sessionId === sessionId) {
                 localStorage.removeItem('stocktake_session');
