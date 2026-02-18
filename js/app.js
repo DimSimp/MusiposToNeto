@@ -69,6 +69,8 @@ const App = {
         // Upload screen
         UI.$('csv-upload').addEventListener('change', (e) => this.handleFileUpload(e));
         UI.$('session-list-items').addEventListener('click', (e) => {
+            // Ignore clicks on the delete button
+            if (e.target.closest('.btn-delete-session')) return;
             const sessionItem = e.target.closest('.session-list-item');
             if (sessionItem) {
                 this.resumeSession(sessionItem.dataset.sessionId);
