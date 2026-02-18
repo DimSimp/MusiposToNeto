@@ -76,8 +76,10 @@ const App = {
         });
 
         // Scan screen - Step navigation
+        UI.$('btn-confirm-musipos').addEventListener('click', () => this.submitMusiposBarcode());
         UI.$('btn-continue-to-product').addEventListener('click', () => this.goToProductBarcode());
         UI.$('btn-skip-item').addEventListener('click', () => this.skipItem());
+        UI.$('btn-back-to-item-info').addEventListener('click', () => this.goToItemInfo());
         UI.$('btn-confirm-product').addEventListener('click', () => this.confirmProductBarcode());
         UI.$('btn-no-barcode').addEventListener('click', () => this.skipProductBarcode());
         UI.$('btn-confirm-quantity').addEventListener('click', () => this.goToConfirm());
@@ -311,6 +313,14 @@ const App = {
             UI.$('input-musipos-barcode'),
             (barcode) => this.handleMusiposScan(barcode)
         );
+    },
+
+    // Submit musipos barcode via Confirm button
+    submitMusiposBarcode() {
+        const barcode = UI.getValue('input-musipos-barcode').trim().toUpperCase();
+        if (barcode) {
+            this.handleMusiposScan(barcode);
+        }
     },
 
     // Handle Musipos barcode scan
