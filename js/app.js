@@ -83,6 +83,7 @@ const App = {
         UI.$('btn-confirm-quantity').addEventListener('click', () => this.goToConfirm());
         UI.$('btn-save').addEventListener('click', () => this.saveAndNext());
         UI.$('btn-back-to-qty').addEventListener('click', () => this.goToQuantity());
+        UI.$('btn-back-to-product').addEventListener('click', () => this.goToProductBarcode());
 
         // Quantity controls
         UI.$('btn-qty-minus').addEventListener('click', () => this.adjustQuantity(-1));
@@ -371,12 +372,13 @@ const App = {
             UI.setValue('input-product-barcode', existingBarcode);
         }
 
-        // Attach scanner
+        // Attach scanner - auto-advance on scan
         ScannerService.attachToInput(
             UI.$('input-product-barcode'),
             (barcode) => {
                 this.state.newProductBarcode = barcode;
-                UI.setValue('input-product-barcode', barcode);
+                this.state.expectedBarcode = barcode;
+                this.goToQuantity();
             }
         );
     },
