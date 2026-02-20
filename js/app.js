@@ -96,16 +96,18 @@ const App = {
         // Quantity controls
         UI.$('btn-qty-minus').addEventListener('click', () => this.adjustQuantity(-1));
         UI.$('btn-qty-plus').addEventListener('click', () => this.adjustQuantity(1));
-        UI.$('input-quantity').addEventListener('focus', (e) => {
+        const qtyInput = UI.$('input-quantity');
+        const clearIfZero = (e) => {
             if (e.target.value === '0') e.target.value = '';
-        });
-        UI.$('input-quantity').addEventListener('blur', (e) => {
+        };
+        qtyInput.addEventListener('focus', clearIfZero);
+        qtyInput.addEventListener('click', clearIfZero);
+        qtyInput.addEventListener('blur', (e) => {
             const val = parseInt(e.target.value) || 0;
             this.state.quantity = Math.max(0, val);
             UI.updateQuantityDisplay(this.state.quantity);
         });
-        UI.$('input-quantity').addEventListener('input', (e) => {
-            // Strip any non-numeric characters (safety for tel type)
+        qtyInput.addEventListener('input', (e) => {
             e.target.value = e.target.value.replace(/[^0-9]/g, '');
         });
 
