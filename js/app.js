@@ -134,6 +134,16 @@ const App = {
             }
         });
 
+        // Duplicate item warning modal
+        UI.$('btn-duplicate-continue').addEventListener('click', () => {
+            UI.$('duplicate-modal').classList.add('hidden');
+            this.goToItemInfo();
+        });
+        UI.$('btn-duplicate-back').addEventListener('click', () => {
+            UI.$('duplicate-modal').classList.add('hidden');
+            this.goToMusiposScan();
+        });
+
         // Active users
         UI.$('btn-active-users').addEventListener('click', () => UI.show('active-users-overlay'));
         UI.$('btn-close-active-users').addEventListener('click', () => UI.hide('active-users-overlay'));
@@ -434,8 +444,16 @@ const App = {
                 return;
             }
 
-            // Found item
+            // Found item - check if already modified this session
             this.state.currentItem = item;
+
+            if (item._modified) {
+                const msg = `"${item.Title || item.Barcode}" has already been updated in this session. Would you like to update it again?`;
+                UI.$('duplicate-modal-msg').textContent = msg;
+                UI.$('duplicate-modal').classList.remove('hidden');
+                return;
+            }
+
             this.goToItemInfo();
         } catch (error) {
             console.error('Lookup error:', error);
