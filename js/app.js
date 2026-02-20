@@ -220,8 +220,8 @@ const App = {
             UI.setText('upload-status', `Found ${itemCount} items. Uploading...`);
             UI.showLoading('Uploading to database...');
 
-            // Create session in Firebase
-            const sessionId = await FirebaseService.createSession(file.name, itemCount);
+            // Create session in Firebase (store original headers for export)
+            const sessionId = await FirebaseService.createSession(file.name, itemCount, CSVService.originalHeaders);
 
             // Upload items in batches
             await this.uploadItemsInBatches(sessionId, items);
@@ -620,7 +620,10 @@ const App = {
             const session = await FirebaseService.getSession(this.state.sessionId);
 
             const fileName = `stocktake_${session.csvFileName || 'export'}_${new Date().toISOString().slice(0, 10)}.csv`;
-            CSVService.exportToCSV(items, fileName);
+            const headers = session.csvHeaders && session.csvHeaders.length > 0
+                ? session.csvHeaders
+                : CSVService.originalHeaders;
+            CSVService.exportToCSV(items, fileName, headers);
 
             UI.success('CSV exported successfully!');
         } catch (error) {

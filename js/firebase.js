@@ -69,7 +69,7 @@ const FirebaseService = {
     },
 
     // Session Management
-    async createSession(fileName, itemCount) {
+    async createSession(fileName, itemCount, csvHeaders) {
         const sessionRef = db.collection('stocktakes').doc();
         const sessionData = {
             id: sessionRef.id,
@@ -77,7 +77,8 @@ const FirebaseService = {
             itemCount: itemCount,
             updatedCount: 0,
             createdAt: firebase.firestore.FieldValue.serverTimestamp(),
-            createdBy: this.getCurrentUserId()
+            createdBy: this.getCurrentUserId(),
+            csvHeaders: csvHeaders || []
         };
 
         await sessionRef.set(sessionData);

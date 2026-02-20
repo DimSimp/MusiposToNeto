@@ -44,41 +44,38 @@ const CSVService = {
     },
 
     // Export items back to CSV
-    exportToCSV(items, fileName = 'stocktake_export.csv') {
-        // Build headers - use original headers plus any new stocktake columns
-        const stocktakeColumns = ['_stocktake_quantity', '_modified', '_modifiedAt', '_modifiedBy'];
-        const exportHeaders = [...this.originalHeaders];
+    exportToCSV(items, fileName = 'stocktake_export.csv', headers = null) {
+        // Use provided headers, falling back to in-memory headers from parsing
+        const originalHeaders = (headers && headers.length > 0)
+            ? headers
+            : this.originalHeaders;
 
-        // Add stocktake_quantity column if not present
+        // Build final column list: original headers + stocktake_quantity
+        const exportHeaders = [...originalHeaders];
         if (!exportHeaders.includes('stocktake_quantity')) {
             exportHeaders.push('stocktake_quantity');
         }
 
-        // Map items to export format
-        const exportData = items.map(item => {
+        // Sort items alphabetically by Supplier_Item_ID (SKU)
+        const sorted = [...items].sort((a, b) => {
+            const skuA = (a.Supplier_Item_ID || '').toString().toUpperCase();
+            const skuB = (b.Supplier_Item_ID || '').toString().toUpperCase();
+            return skuA.localeCompare(skuB);
+        });
+
+        // Map to export format - only original columns + stocktake_quantity
+        const exportData = sorted.map(item => {
             const row = {};
-
-            // Copy original columns
-            this.originalHeaders.forEach(header => {
-                row[header] = item[header] || '';
+            originalHeaders.forEach(header => {
+                row[header] = item[header] !== undefined ? item[header] : '';
             });
-
-            // Add stocktake quantity
-            row['stocktake_quantity'] = item._stocktake_quantity !== null
+            row['stocktake_quantity'] = item._stocktake_quantity !== null && item._stocktake_quantity !== undefined
                 ? item._stocktake_quantity
                 : '';
-
             return row;
         });
 
-        // Generate CSV
-        const csv = Papa.unparse(exportData, {
-            columns: exportHeaders.includes('stocktake_quantity')
-                ? exportHeaders
-                : [...exportHeaders, 'stocktake_quantity']
-        });
-
-        // Download file
+        const csv = Papa.unparse(exportData, { columns: exportHeaders });
         this.downloadFile(csv, fileName, 'text/csv');
     },
 
